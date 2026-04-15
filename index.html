@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soviet Union Game 2.0</title>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; background: #1a1a1a; color: #e0e0e0; text-align: center; padding: 20px; line-height: 1.6; }
+        .screen { display: none; max-width: 800px; margin: 0 auto; background: #262626; padding: 30px; border: 2px solid #cc0000; border-radius: 10px; box-shadow: 0 0 20px rgba(204, 0, 0, 0.2); }
+        .active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        h1 { color: #cc0000; text-transform: uppercase; letter-spacing: 2px; }
+        .button { margin: 10px; padding: 12px 25px; background: #cc0000; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: background 0.3s, transform 0.1s; }
+        .button:hover { background: #990000; transform: scale(1.05); }
+        .button:active { transform: scale(0.95); }
+        .button.locked { background: #444; cursor: not-allowed; opacity: 0.6; }
+        .button.locked:hover { background: #444; transform: none; }
+        footer { margin-top: 40px; color: #666; font-size: 0.8em; cursor: pointer; }
+        footer:hover { color: #cc0000; }
+        .stats-bar { background: #333; padding: 10px; border-radius: 5px; margin-bottom: 20px; display: flex; justify-content: space-around; font-size: 0.9em; border: 1px solid #444; }
+        .stat-val { color: #cc0000; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="menu" class="screen active">
+        <h1>Soviet Union Game 2.0</h1>
+        <p><strong>"Welcome, comrade, to the crossroads of history!"</strong></p>
+        <p>The year is 1917. Russia is in turmoil. Your decisions will not only shape the present but build the foundation of the future. Will you lead a global revolution or forge a different path?</p>
+        <button class="button" onclick="startChapter(0)">Start Game</button>
+        <button class="button" onclick="navigateTo('chapter-menu')">Chapters</button>
+        <button class="button" onclick="navigateTo('help')">Help</button>
+        <button class="button" onclick="exitGame()">Exit</button>
+        <footer onclick="handleFooterClick()">Created by Josef Iebed and ChatGPT | v2.0</footer>
+    </div>
+
+    <div id="help" class="screen">
+        <h1>How to Play</h1>
+        <p>Navigate through historical turning points. Your choices have persistent effects on the state of the nation.</p>
+        <ul style="text-align: left; display: inline-block;">
+            <li><strong>Support:</strong> Push for revolutionary change and state control.</li>
+            <li><strong>Neutral:</strong> Attempt to find a middle ground or avoid conflict.</li>
+            <li><strong>Oppose:</strong> Resist the Bolshevik rise or push for reforms.</li>
+        </ul>
+        <p><em>Note: Outcomes are randomized. The same choice may lead to different results!</em></p>
+        <button class="button" onclick="navigateTo('menu')">Return</button>
+    </div>
+
+    <div id="chapter-menu" class="screen">
+        <h1>Chapter Selection</h1>
+        <button class="button" onclick="startChapter(0)">1917–1919: The October Revolution</button>
+        <button class="button" onclick="startChapter(1)">1920–1930: Lenin’s Vision and Stalin’s Rise</button>
+        <button class="button locked">1931–1940: The Great Purge (Locked)</button>
+        <button class="button" onclick="navigateTo('menu')">Return</button>
+    </div>
+
+    <div id="gameplay" class="screen">
+        <div class="stats-bar">
+            <span>Stability: <span id="stat-stability" class="stat-val">0</span></span>
+            <span>Ideology: <span id="stat-ideology" class="stat-val">0</span></span>
+            <span>Economy: <span id="stat-economy" class="stat-val">0</span></span>
+        </div>
+        <h2 id="gameplay-title">[Title]</h2>
+        <p id="gameplay-text">[Story]</p>
+        <button class="button" onclick="makeChoice('pro')">Support</button>
+        <button class="button" onclick="makeChoice('neutral')">Neutral</button>
+        <button class="button" onclick="makeChoice('contra')">Oppose</button>
+    </div>
+
+    <div id="outcome" class="screen">
+        <h2 id="outcome-title">[Outcome]</h2>
+        <p id="outcome-text">[Description]</p>
+        <button class="button" onclick="nextSubchapter()">Continue</button>
+    </div>
+
+    <div id="chapter-end" class="screen">
+        <h1>Chapter Complete</h1>
+        <p id="end-message"></p>
+        <button class="button" onclick="navigateTo('menu')">Main Menu</button>
+    </div>
+
+    <div id="easter-egg" class="screen">
+        <h1>Comrade Cat</h1>
+        <p>During WWII, cats protected grain supplies from rats. Truly revolutionary felines!</p>
+        <div class="tenor-gif-embed" data-postid="21826197" data-share-method="host" data-aspect-ratio="1.06312" data-width="100%">
+            <a href="https://tenor.com/view/soviet-cat-sovicat-soviet-ussr-cat-gif-21826197">Soviet Cat GIF</a>
+        </div>
+        <script type="text/javascript" async src="https://tenor.com/embed.js"></script>
+        <button class="button" onclick="navigateTo('menu')">Return</button>
+    </div>
+
+    <script>
+        let gameState = { stability: 0, ideology: 0, economy: 0 };
+        let currentChapter = 0;
+        let currentSubchapter = 0;
+        let footerClicks = 0;
+
+        const chapters = [
+            {
+                title: "The October Revolution",
+                subchapters: [
+                    {
+                        title: "Bolshevik Seizure of Power",
+                        text: "The Bolsheviks storm Petrograd. What is your stance?",
+                        outcomes: {
+                            pro: [
+                                { title: "Revolutionary Success", text: "You help storm the Winter Palace.", effects: { ideology: 2, stability: 1 } },
+                                { title: "Bloody Victory", text: "The palace falls, but at a high cost of life.", effects: { ideology: 2, stability: -1 } }
+                            ],
+                            neutral: [
+                                { title: "Watching Chaos", text: "You stay back as power shifts in the streets.", effects: { stability: -1 } },
+                                { title: "Avoided Conflict", text: "You leave the city before the fighting starts.", effects: { stability: 0 } }
+                            ],
+                            contra: [
+                                { title: "Resistance", text: "You try to rally the Provisional forces to resist.", effects: { ideology: -2, stability: -1 } },
+                                { title: "Underground Opposition", text: "You go into hiding to plan a counter-offensive.", effects: { ideology: -1, stability: -2 } }
+                            ]
+                        }
+                    },
+                    {
+                        title: "Formation of the Red Army",
+                        text: "Leon Trotsky is organizing the Red Army. Do you join?",
+                        outcomes: {
+                            pro: [{ title: "Red Soldier", text: "You enlist to defend the revolution.", effects: { ideology: 1, stability: 1 } }],
+                            neutral: [{ title: "Civilian Life", text: "You try to live normally amidst the draft.", effects: { stability: -1 } }],
+                            contra: [{ title: "White Resistance", text: "You join the anti-Bolshevik forces.", effects: { ideology: -2, stability: -2 } }]
+                        }
+                    }
+                ]
+            },
+            {
+                title: "Lenin’s Vision & Stalin’s Rise",
+                subchapters: [
+                    {
+                        title: "The NEP Question",
+                        text: "The civil war is over, but the economy is in ruins. Introduce the New Economic Policy?",
+                        outcomes: {
+                            pro: [{ title: "Pragmatic Reform", text: "Limited capitalism stabilizes the nation.", effects: { economy: 2, ideology: -1 } }],
+                            neutral: [{ title: "Stagnation", text: "Indecision leads to further famine.", effects: { economy: -1, stability: -1 } }],
+                            contra: [{ title: "Hardline Control", text: "Wartime policies continue, fueling unrest.", effects: { ideology: 2, stability: -2 } }]
+                        }
+                    },
+                    {
+                        title: "Stalin vs. Trotsky",
+                        text: "Lenin has died. A power struggle begins. Who do you support?",
+                        outcomes: {
+                            pro: [{ title: "The Man of Steel", text: "Stalin consolidates power. Discipline is enforced.", effects: { stability: 2, ideology: 2, repression: 2 } }],
+                            neutral: [{ title: "Exile", text: "You avoid the struggle and are eventually purged from the party.", effects: { stability: -1 } }],
+                            contra: [{ title: "The Permanent Revolution", text: "Trotsky's ideals lead to global tension and internal unrest.", effects: { ideology: 3, stability: -2 } }]
+                        }
+                    }
+                ]
+            }
+        ];
+
+        function startChapter(idx) {
+            currentChapter = idx;
+            currentSubchapter = 0;
+            updateStats();
+            showSubchapter();
+        }
+
+        function showSubchapter() {
+            const sub = chapters[currentChapter].subchapters[currentSubchapter];
+            document.getElementById("gameplay-title").textContent = sub.title;
+            document.getElementById("gameplay-text").textContent = sub.text;
+            navigateTo("gameplay");
+        }
+
+        function makeChoice(path) {
+            const possible = chapters[currentChapter].subchapters[currentSubchapter].outcomes[path];
+            const outcome = possible[Math.floor(Math.random() * possible.length)];
+            if (outcome.effects) {
+                for (let key in outcome.effects) {
+                    if (gameState[key] === undefined) gameState[key] = 0;
+                    gameState[key] += outcome.effects[key];
+                }
+            }
+            updateStats();
+            document.getElementById("outcome-title").textContent = outcome.title;
+            document.getElementById("outcome-text").textContent = outcome.text;
+            navigateTo("outcome");
+        }
+
+        function nextSubchapter() {
+            currentSubchapter++;
+            if (currentSubchapter >= chapters[currentChapter].subchapters.length) {
+                document.getElementById("end-message").textContent = `Chapter "${chapters[currentChapter].title}" finished. Current Stability: ${gameState.stability}, Ideology: ${gameState.ideology}.`;
+                navigateTo("chapter-end");
+            } else {
+                showSubchapter();
+            }
+        }
+
+        function updateStats() {
+            document.getElementById("stat-stability").textContent = gameState.stability;
+            document.getElementById("stat-ideology").textContent = gameState.ideology;
+            document.getElementById("stat-economy").textContent = gameState.economy;
+        }
+
+        function navigateTo(id) {
+            document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+            document.getElementById(id).classList.add("active");
+        }
+
+        function handleFooterClick() {
+            if (++footerClicks >= 24) navigateTo("easter-egg");
+        }
+
+        function exitGame() {
+            alert("Прощай, товарищ 🫡");
+            window.close();
+        }
+    </script>
+</body>
+</html>
