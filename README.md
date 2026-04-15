@@ -1,5 +1,6 @@
 # Soviet Union Game v2.0
-
+Welcome, comrade, to the year 1917!
+History is a fragile thing, comrade. In this game, your choices can shake the foundations of the past and rewrite the future. But don’t get too excited! Some things, like the Austrian painter with the tiny mustache, poor JFK, and a 9/11-like event, will remain inevitable.
 An interactive historical game where your decisions shape the fate of Russia and the world from 1917 onward. 
 
 ## Live Version
